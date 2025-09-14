@@ -1,149 +1,228 @@
 ﻿#include <iostream>
-#include <string>
 
-std::string removeComments(const std::string& sourceCode) 
+template <typename T>
+class Matrix
 {
-    std::string result;
-    result.reserve(sourceCode.size());
-
-    bool inSingleLineComment = false;
-    bool inMultiLineComment = false;
-    bool inString = false;
-    bool inChar = false;
-    bool escapeNext = false; 
-
-    for (size_t i = 0; i < sourceCode.size(); ++i) 
+private:
+    T** data{ nullptr };
+    size_t rows{ 0 };
+    size_t cols{ 0 };
+    void clearMemory()
     {
-        char currentChar = sourceCode[i];
-        char nextChar = (i + 1 < sourceCode.size()) ? sourceCode[i + 1] : '\0';
-
-        if (escapeNext) 
+        if (data != nullptr)
         {
-            if (!inSingleLineComment && !inMultiLineComment) 
+            for (size_t i = 0; i < rows; ++i)
             {
-                result += currentChar;
+                delete[] data[i];
             }
-            escapeNext = false;
-            continue;
+            delete[] data;
+            data = nullptr;
         }
+        rows = 0;
+        cols = 0;
+    }
 
-        if (currentChar == '\\' && (inString || inChar)) 
-        {
-            escapeNext = true;
-            if (!inSingleLineComment && !inMultiLineComment) 
-            {
-                result += currentChar;
-            }
-            continue;
+    void allocateMemory(size_t r, size_t c)
+    {
+        rows = r;
+        cols = c;
+        data = new T * [rows];
+        for (size_t i = 0; i < rows; ++i) {
+            data[i] = new T[cols];
         }
-
-        if (!inSingleLineComment && !inMultiLineComment) 
+    }
+public:
+    Matrix() : data(nullptr), rows(0), cols(0) {}
+    Matrix(size_t r, size_t c) : data(nullptr), rows(0), cols(0)
+    {
+        allocateMemory(r, c);
+    }
+    ~Matrix()
+    {
+        clearMemory();
+    }
+    size_t getRows() const { return rows; }
+    size_t getCols() const { return cols; }
+    void fillFromKeyboard()
+    {
+        std::cout << "Введите элементы матрицы " << rows << "x" << cols << ":\n";
+        for (size_t i = 0; i < rows; ++i)
         {
-            if (currentChar == '"' && !inChar && !escapeNext) 
+            for (size_t j = 0; j < cols; ++j)
             {
-                inString = !inString;
-                result += currentChar;
-                continue;
-            }
-
-            if (currentChar == '\'' && !inString && !escapeNext) 
-            {
-                inChar = !inChar;
-                result += currentChar;
-                continue;
-            }
-
-            if (inString || inChar) 
-            {
-                result += currentChar;
-                continue;
-            }
-        }
-
-        if (!inMultiLineComment && !inString && !inChar && currentChar == '/' && nextChar == '/') 
-        {
-            bool isComment = true;
-
-            if (i > 0) 
-            {
-                char beforeChar = sourceCode[i - 1];
-                if (std::isalnum(beforeChar) || beforeChar == '_' || beforeChar == ':' || beforeChar == '/' || beforeChar == '.' || beforeChar == '\\') 
-                {
-                    isComment = false;
-                }
-            }
-
-            if (isComment) 
-            {
-                inSingleLineComment = true;
-                i++; 
-                continue;
+                std::cout << "Элемент [" << i << "][" << j << "]: ";
+                std::cin >> data[i][j];
             }
         }
-
-        if (!inSingleLineComment && !inString && !inChar && currentChar == '/' && nextChar == '*') 
+    }
+    void fillRandom()
+    {
+        for (size_t i = 0; i < rows; ++i)
         {
-            inMultiLineComment = true;
-            i++; 
-            continue;
-        }
-
-        if (inMultiLineComment && currentChar == '*' && nextChar == '/') 
-        {
-            inMultiLineComment = false;
-            i++; 
-            continue;
-        }
-
-        if (inSingleLineComment && currentChar == '\n') 
-        {
-            inSingleLineComment = false;
-            result += currentChar; 
-            continue;
-        }
-
-        if (!inSingleLineComment && !inMultiLineComment) 
-        {
-            result += currentChar;
+            for (size_t j = 0; j < cols; ++j)
+            {
+                data[i][j] = rand();
+            }
         }
     }
 
-    return result;
-}
+    void display() const
+    {
+        std::cout << "Матрица " << rows << "x" << cols << ":\n";
+        for (size_t i = 0; i < rows; ++i)
+        {
+            for (size_t j = 0; j < cols; ++j)
+            {
+                std::cout << data[i][j] << " ";
+            }
+            std::cout << "\n";
+        }
+    }
 
-int main() {
+    T findMax() const
+    {
+        T max = data[0][0];
+        for (size_t i = 0; i < rows; ++i)
+        {
+            for (size_t j = 0; j < cols; ++j)
+            {
+                if (data[i][j] > max)
+                {
+                    max = data[i][j];
+                }
+            }
+        }
+        return max;
+    }
+
+    T findMin() const
+    {
+
+        T min = data[0][0];
+        for (size_t i = 0; i < rows; ++i) {
+            for (size_t j = 0; j < cols; ++j) {
+                if (data[i][j] < min) {
+                    min = data[i][j];
+                }
+            }
+        }
+        return min;
+    }
+
+    Matrix operator+(const Matrix& other) const
+    {
+        if (rows != other.rows || cols != other.cols)
+        {
+            throw std::invalid_argument("Размеры матриц не совпадают для сложения");
+        }
+
+        Matrix result(rows, cols);
+        for (size_t i = 0; i < rows; ++i)
+        {
+            for (size_t j = 0; j < cols; ++j)
+            {
+                result.data[i][j] = data[i][j] + other.data[i][j];
+            }
+        }
+        return result;
+    }
+
+    Matrix operator-(const Matrix& other) const
+    {
+        if (rows != other.rows || cols != other.cols)
+        {
+            throw std::invalid_argument("Размеры матриц не совпадают для вычитания");
+        }
+
+        Matrix result(rows, cols);
+        for (size_t i = 0; i < rows; ++i)
+        {
+            for (size_t j = 0; j < cols; ++j)
+            {
+                result.data[i][j] = data[i][j] - other.data[i][j];
+            }
+        }
+        return result;
+    }
+
+    Matrix operator*(const Matrix& other) const
+    {
+        if (cols != other.rows)
+        {
+            throw std::invalid_argument("Количество столбцов первой матрицы должно равняться количеству строк второй");
+        }
+
+        Matrix result(rows, other.cols);
+        for (size_t i = 0; i < rows; ++i)
+        {
+            for (size_t j = 0; j < other.cols; ++j)
+            {
+                result.data[i][j] = T();
+                for (size_t k = 0; k < cols; ++k)
+                {
+                    result.data[i][j] += data[i][k] * other.data[k][j];
+                }
+            }
+        }
+        return result;
+    }
+
+    Matrix operator/(T scalar) const
+    {
+        if (scalar == 0)
+        {
+            throw std::invalid_argument("Деление на ноль");
+        }
+
+        Matrix result(rows, cols);
+        for (size_t i = 0; i < rows; ++i)
+        {
+            for (size_t j = 0; j < cols; ++j)
+            {
+                result.data[i][j] = data[i][j] / scalar;
+            }
+        }
+        return result;
+    }
+};
+
+
+int main()
+{
     setlocale(LC_ALL, "RU");
-    
-    std::string testCode =
-        "#include <iostream>\n"
-        "// Однострочный комментарий\n"
-        "using namespace std;\n\n"
-        "/* Многострочный комментарий\n"
-        "   на нескольких строках */\n\n"
-        "int main() {\n"
-        "    cout << \"Hello, World!\" << endl; // Комментарий после кода\n"
-        "    \n"
-        "    string text = \"Это /* не комментарий */ в строке\";\n"
-        "    char ch = '\\''; // Символ кавычки\n"
-        "    char ch2 = '\\\\'; // Обратный слеш\n"
-        "    \n"
-        "    /* Комментарий в середине */ int x = 5; /* И еще один */\n"
-        "    \n"
-        "    // Комментарий с URL: http://example.com\n"
-        "    int y = x + 1; // Прибавляем единицу\n"
-        "    \n"
-        "    return 0;\n"
-        "}\n";
 
-    std::cout << "Исходный код с комментариями:\n";
-    std::cout << "========================================\n";
-    std::cout << testCode << std::endl;
+    Matrix<int> mat1(2, 3);
+    Matrix<int> mat2(2, 3);
+    Matrix<int> mat3(3, 2);
 
-    std::string cleanedCode = removeComments(testCode);
+    mat1.fillRandom();
+    mat2.fillRandom();
+    mat3.fillFromKeyboard();
 
-    std::cout << "Код без комментариев:\n";
-    std::cout << "========================================\n";
-    std::cout << cleanedCode << std::endl;
+    std::cout << "Матрица 1:\n";
+    mat1.display();
+
+    std::cout << "\nМатрица 2:\n";
+    mat2.display();
+
+    std::cout << "\nМатрица 3:\n";
+    mat3.display();
+
+    std::cout << "\nСложение матриц 1 и 2:\n";
+    Matrix<int> sum = mat1 + mat2;
+    sum.display();
+
+    std::cout << "\nВычитание матриц 1 и 2:\n";
+    Matrix<int> diff = mat1 - mat2;
+    diff.display();
+
+    std::cout << "\nУмножение матриц 1 и 3:\n";
+    Matrix<int> product = mat1 * mat3;
+    product.display();
+
+    std::cout << "\nДеление матрицы 1 на 2:\n";
+    Matrix<int> division = mat1 / 2;
+    division.display();
 
     return 0;
 }
