@@ -2,82 +2,87 @@
 #include <list>
 #include <stdexcept>
 
-class EmptyListException : public std::exception 
+namespace Exceptions 
 {
-public:
-    const char* what() const noexcept override 
+    class EmptyListException : public std::exception
     {
-        return "Ошибка: попытка удаления из пустого списка";
-    }
-};
-
-template<typename T>
-class SafeDoublyLinkedList {
-private:
-    std::list<T> data;
-
-    void checkEmpty() const 
-    {
-        if (data.empty()) 
+    public:
+        const char* what() const noexcept override
         {
-            throw EmptyListException();
+            return "Ошибка: попытка удаления из пустого списка";
         }
-    }
+    };
+}
+namespace Containers 
+{
+    template<typename T>
+    class SafeDoublyLinkedList {
+    private:
+        std::list<T> data;
 
-public:
-    void pushBack(const T& value) 
-    {
-        data.push_back(value);
-    }
-
-    void pushFront(const T& value) 
-    {
-        data.push_front(value);
-    }
-
-    void popBack() 
-    {
-        checkEmpty();
-        data.pop_back();
-    }
-
-    void popFront() 
-    {
-        checkEmpty();
-        data.pop_front();
-    }
-
-    void remove(const T& value) 
-    {
-        checkEmpty();
-        data.remove(value);
-    }
-
-    bool empty() const 
-    {
-        return data.empty();
-    }
-
-    size_t size() const 
-    {
-        return data.size();
-    }
-
-    void print() const 
-    {
-        for (const auto& item : data) 
+        void checkEmpty() const
         {
-            std::cout << item << " <-> ";
+            if (data.empty())
+            {
+                throw EmptyListException();
+            }
         }
-        std::cout << "NULL" << std::endl;
-    }
-};
+
+    public:
+        void pushBack(const T& value)
+        {
+            data.push_back(value);
+        }
+
+        void pushFront(const T& value)
+        {
+            data.push_front(value);
+        }
+
+        void popBack()
+        {
+            checkEmpty();
+            data.pop_back();
+        }
+
+        void popFront()
+        {
+            checkEmpty();
+            data.pop_front();
+        }
+
+        void remove(const T& value)
+        {
+            checkEmpty();
+            data.remove(value);
+        }
+
+        bool empty() const
+        {
+            return data.empty();
+        }
+
+        size_t size() const
+        {
+            return data.size();
+        }
+
+        void print() const
+        {
+            for (const auto& item : data)
+            {
+                std::cout << item << " <-> ";
+            }
+            std::cout << "NULL" << std::endl;
+        }
+    };
+}
 
 int main()
 {
     setlocale(LC_ALL, "RU");
 
-    SafeDoublyLinkedList<int> list;
+    Containers::SafeDoublyLinkedList<int> list;
 
     list.pushBack(1);
     list.pushBack(2);
@@ -93,7 +98,7 @@ int main()
     {
         list.popBack(); 
     }
-    catch (const EmptyListException& e) 
+    catch (const Exceptions::EmptyListException& e)
     {
         std::cout << e.what() << std::endl;
     }
